@@ -9,19 +9,19 @@
 #include<arpa/inet.h>
 #include<errno.h>
 
-
-ssize_t written(int sockfd, char sendline[]){//把从stdin读取的内容写入sockfd所指的文件内，并返回实际写入内容的大小
+#if 0
+ssize_t written(int sockfd, char sendline[]){
 	ssize_t actualsize;//
 	int i;
-	int readsize=strlen(sendline);//传入数组的大小
+	int readsize=strlen(sendline);
 	printf("%s", "length of message received: ");
 	printf("%i\n", readsize-1);
 
-	actualsize=write(sockfd, sendline, strlen(sendline));//write()返回实际写入的字节数，有错误发生时返回-1，错误代码存入errno中
+	actualsize=write(sockfd, sendline, strlen(sendline));
 	printf("%s", "length of message written: ");
 	printf("%zu\n", actualsize-1);
 
-	if(actualsize<readsize){//如果实际写入字数<接收到的字数，则把没写入的字继续写入，这里相当于双重保险
+	if(actualsize<readsize){
 		for(i=actualsize; i<=readsize; i++){
 			write(sockfd, (void*)&sendline[i], 1);
 		}
@@ -29,6 +29,7 @@ ssize_t written(int sockfd, char sendline[]){//把从stdin读取的内容写入s
 	return actualsize;
 
 }
+#endif
 
 int main(int argc, char *argv[]){
 	int sockfd;
@@ -71,7 +72,7 @@ int main(int argc, char *argv[]){
 		printf("Input: ");
 		fgets(bufSend, 100, stdin);//Save the content from stdin to bufSend array
 
-		if(written(sockfd, bufSend)<0){//Write the content from bufSend array to sockfd
+		if(write(sockfd, bufSend,strlen(bufSend))<0){//Write the content from bufSend array to sockfd
 			printf("%s", "write error");
 		}
 		printf("client written：%s\n",bufSend);
