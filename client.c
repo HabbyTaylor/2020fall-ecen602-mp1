@@ -8,6 +8,7 @@
 #include<unistd.h>
 #include<arpa/inet.h>
 #include<errno.h>
+#include<time.h>
 
 #if 0
 ssize_t written(int sockfd, char sendline[]){
@@ -32,21 +33,22 @@ ssize_t written(int sockfd, char sendline[]){
 #endif
 
 int main(int argc, char *argv[]){
-	int sockfd;
+	int clientSocket;
 	char bufSend[100];//content in client
 	char buffer[100];//content echoing back from server
-	struct sockaddr_in sadr;
+	struct sockaddr_in sadr;//service_address
 	int port;
+	time_t tm;
 	port=atoi(argv[2]);//get port 
 	
 	//Create socket
-	sockfd=socket(PF_INET, SOCK_STREAM, 0);
-	if(sockfd==-1){//sockfd=-1
+	clientSocket=socket(PF_INET, SOCK_STREAM, 0);
+	if(clientSocket==-1){//sockfd=-1
 		perror("socket");
 		exit(-1);
 	}
 	else{
-		fputs("socket created\n", stdout);
+		fputs("client socket created\n", stdout);
 	} 
 	
 	//Initialize service_address
@@ -55,14 +57,14 @@ int main(int argc, char *argv[]){
 	sadr.sin_port=htons(port);
 	inet_pton(AF_INET, argv[2], &(sadr.sin_addr));
 
-	//Connect sockfd and service_address
-	if(connect(sockfd, (struct sockaddr*)&sadr, sizeof(sadr))==-1){
-		close(sockfd);
+	//Connect socket and service_address
+	if(connect(clientSocket, (struct sockaddr*)&sadr, sizeof(sadr))==-1){
+		close(clientSocket);
 		perror("connection failed");
 		return 1;
 	}
 	else{
-		fputs("connected\n", stdout);
+		fputs("connected to server.\n", stdout);
 	}
 
 	//Listen to the request from client
@@ -72,16 +74,18 @@ int main(int argc, char *argv[]){
 		printf("Input: ");
 		fgets(bufSend, 100, stdin);//Save the content from stdin to bufSend array
 
-		if(write(sockfd, bufSend,strlen(bufSend))<0){//Write the content from bufSend array to sockfd
+		if(write(clientSocket, bufSend,strlen(bufSend))<0){//Write the content from bufSend array to socket
 			printf("%s", "write error");
 		}
+		
 		printf("client written：%s\n",bufSend);
 		
-		read(sockfd, buffer, sizeof(buffer)-1);//Save the content from socket to buffer array
-		printf("server echos back：%s\n", buffer);
+		read(clientSocket, buffer, sizeof(buffer)-1);//Save the content from socket to buffer array
+		time(&tm);
+		printf("server echos back：%s, and the time stamp is: %s\n", buffer, ctime(&tm));
 	}
 
-	close(sockfd);
+	close(clientSocket);
 
 
 }

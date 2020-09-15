@@ -54,7 +54,7 @@ int main(int arg, char *argv[]){
 		exit(1);
 	}
 	else{
-		fputs("socket created\n", stdout);
+		fputs("server socket created\n", stdout);
 	}
 
 	//Config the sigaction
@@ -89,33 +89,31 @@ int main(int arg, char *argv[]){
 	//Keep accepting new connections from listen
 	for(;;){
 		newfd=accept(listenfd, (struct sockaddr*)NULL, NULL);//accepting new connections from listen
-		fputs("new connection accepted", stdout);
-		fputs("\n", stdout);
+		if(newfd<0)exit(1);
+		fputs("new connection accepted\n", stdout);
 
 		if((childpid=fork())==0){//child process id=0 when fork is called
 			fputs("Child created\n", stdout);
 			printf("Child pid=%d\n",getpid());
-			//fputs("\n", stdout);
+			fputs("\n", stdout);
 			close(listenfd);//closing the listening socket of the child
 			memset(str, 0, 100);
+			while((n=read(newfd, str, 100))>0){
+				if(strcmp(str, ":exit")==0){
+					printf("Disconnected from %d\n", getpid());
+					break;
+				}
+				else{
+					time(&tm);
+					printf("Echoing back the message received from client: %s, and the time stamp is: %s\n",str, ctime(&tm));
+					//time(&tm);
+					//printf("Date and time: %s\n", ctime(&tm));
+					write(newfd, str,100);
+					bzero(str, sizeof(str));
+				}
+			}
 		}
 
-		while((n=read(newfd, str, 100))>0){
-			fputs("Echoing back the message received from client: ", stdout);
-			fputs(str, stdout);
-			time(&tm);
-			printf("date and time: %s\n", ctime(&tm));
-			written(newfd, str);
-			memset(str, 0, 100);
-			//close(listenfd);
-		}
-
-		if(n<0){
-
-			fputs("Read error\n", stdout);
-			exit(0);
-		}
-		//exit(0);
 	}
 
 	close(newfd);
